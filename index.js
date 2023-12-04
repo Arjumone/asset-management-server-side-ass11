@@ -79,7 +79,7 @@ async function run() {
         res.send(result);
     });
 
-    // request admin
+    // request admin api
     app.get('/requests', async (req, res) => {
       let query = {};
         if (searchQuery) {
