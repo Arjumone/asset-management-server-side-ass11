@@ -116,7 +116,7 @@ async function run() {
 
     // employee related api
     app.post("/users", async (req, res) => {
-      try {
+      
         const userData = req.body;
         const result = await userCollection.insertOne(userData);
         if (result.insertedId) {
@@ -124,55 +124,16 @@ async function run() {
         } else {
           res.status(500).json({ message: "Failed to create user" });
         }
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal server error" });
-      }
+      
     });
 
     // employee profile
-
-    app.get("/users", async (req, res) => {
-      try {
-        const userData = await userCollection.findOne({
-          email: req.user.email,
-        });
-
-        if (userData) {
-          res.status(200).json(userData);
-        } else {
-          res.status(404).json({ message: "User not found" });
-        }
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal server error" });
-      }
+    app.put('/users/:email', async (req, res) => {
+      const email = req.params.email;
+        const result = await userCollection.updateOne({ email:email });
+        res.send(result)
     });
-
-    // Update user data
-    app.put("/users/:id", async (req, res) => {
-      try {
-        const { name, photoURL, dateOfBirth } = req.body;
-        const updatedUserData = await userCollection.findOneAndUpdate(
-          { email: req.user.email },
-          { name, photoURL, dateOfBirth },
-          { new: true }
-        );
-
-        if (updatedUserData) {
-          res
-            .status(200)
-            .json({ message: "User information updated successfully" });
-        } else {
-          res.status(404).json({ message: "User not found" });
-        }
-      } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Internal server error" });
-      }
-    });
-
-
+    
     // request an asset page api
     app.get('/assetItems', async(req, res) => {
       let query = {};
