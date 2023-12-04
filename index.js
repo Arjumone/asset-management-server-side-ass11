@@ -21,16 +21,25 @@ const client = new MongoClient(uri, {
   },
 });
 
-async function run() {
+
+const dbConnect = async () => {
   try {
-    // Connect the client to the server	(optional starting in v4.7)
-    // await client.connect();
+    client.connect()
+    console.log("DB Connected Successfully");
+  } catch (error) {
+    console.log(error.name,error.message);
+  }
+}
+dbConnect()
+
 
     const userCollection = client.db("assetManagement").collection("users");
     const assetItemCollection = client.db("assetManagement").collection("assetItems");
     const requestCollection = client.db("assetManagement").collection("requests");
-    const itemRequestCollection = client.db("assetManagement").collection("itemRequest");
-    const teamCollection = client.db("assetManagement").collection("team");
+
+    app.get("/", (req, res) => {
+      res.send("Hello World!");
+    });
 
     // users related api
     app.get("/users", async (req, res) => {
@@ -81,15 +90,7 @@ async function run() {
 
     // request admin api
     app.get('/requests', async (req, res) => {
-      let query = {};
-        if (searchQuery) {
-          query = {
-            $or: [
-              { requesterName: { $regex: searchQuery, $options: 'i' } },
-              { requesterEmail: { $regex: searchQuery, $options: 'i' } }
-            ]
-          };
-        }
+      const query = req.body;
         const requests = await requestCollection.find(query).toArray();
         res.json(requests);
     });
@@ -246,23 +247,6 @@ async function run() {
 
 
 
-
-
-    // Send a ping to confirm a successful connection
-    // await client.db("admin").command({ ping: 1 });
-    console.log(
-      "Pinged your deployment. You successfully connected to MongoDB!"
-    );
-  } finally {
-    // Ensures that the client will close when you finish/error
-    // await client.close();
-  }
-}
-run().catch(console.dir);
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
