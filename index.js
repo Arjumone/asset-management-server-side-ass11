@@ -88,6 +88,12 @@ dbConnect()
         res.send(result);
     });
 
+    app.delete('/users/:id', async (req, res) =>{
+          const result = await userCollection.deleteOne({ id: req.params.id });
+          res.send(result)
+      
+  });
+
     // request admin api
     app.get('/requests', async (req, res) => {
       const query = req.body;
