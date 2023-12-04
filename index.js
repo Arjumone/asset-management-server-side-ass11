@@ -29,6 +29,8 @@ async function run() {
     const userCollection = client.db("assetManagement").collection("users");
     const assetItemCollection = client.db("assetManagement").collection("assetItems");
     const requestCollection = client.db("assetManagement").collection("requests");
+    const itemRequestCollection = client.db("assetManagement").collection("itemRequest");
+    const teamCollection = client.db("assetManagement").collection("team");
 
     // users related api
     app.get("/users", async (req, res) => {
@@ -38,7 +40,6 @@ async function run() {
 
     app.post("/users", async (req, res) => {
       const user = req.body;
-
       const query = { email: user.email };
       const existingUser = await userCollection.findOne(query);
       if (existingUser) {
@@ -54,7 +55,6 @@ async function run() {
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: "forbidden access" });
       }
-
       const query = { email: email };
       const user = await userCollection.findOne(query);
       let admin = false;
@@ -63,7 +63,8 @@ async function run() {
       }
       res.send({ admin });
     });
-// Middleware to check if user is an admin
+
+
     const isAdmin = (req, res, next) => {
       if (req.user.role === "admin") {
         next(); 
@@ -72,7 +73,7 @@ async function run() {
       }
     };
 
-    // Route for updating user to admin
+    // Route for update user to admin
     app.put("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
       const filter = { email: email };
@@ -107,12 +108,6 @@ async function run() {
     // Route for admin dashboard
     app.get("/adminDashboard/logo", isAdmin, (req, res) => {});
 
-    // assets related api
-    // app.post("/assets", async (req, res) => {
-    //   const assetItems = req.body;
-    //   const result = await assetCollection.insertOne(assetItems);
-    //   res.send(result);
-    // });
 
     app.get("/assetItems", async (req, res) => {
       const assets = await assetItemCollection.find({}).toArray();
@@ -123,8 +118,6 @@ async function run() {
     app.post("/users", async (req, res) => {
       try {
         const userData = req.body;
-
-        // Create the user in the database
         const result = await userCollection.insertOne(userData);
         if (result.insertedId) {
           res.status(201).json({ message: "User created successfully" });
@@ -155,11 +148,11 @@ async function run() {
         res.status(500).json({ message: "Internal server error" });
       }
     });
+
     // Update user data
     app.put("/users/:id", async (req, res) => {
       try {
         const { name, photoURL, dateOfBirth } = req.body;
-        // Update user data in the database
         const updatedUserData = await userCollection.findOneAndUpdate(
           { email: req.user.email },
           { name, photoURL, dateOfBirth },
@@ -207,7 +200,6 @@ async function run() {
       res.json(user);
     });
     
-    // Route to handle storing of the request data
     app.post('/requests', async (req, res) => {
       const requestData = req.body;
     
@@ -224,24 +216,54 @@ async function run() {
 
     // make a custom api
     app.get('/assetItems', async (req, res) => {
-      try {
         const assetItems = await assetItemCollection.find({}).toArray();
-        res.json(assetItems);
-      } catch (error) {
-        console.error('Error fetching asset items', error);
-        res.status(500).json({ message: 'Error fetching asset items' });
+        res.send(assetItems);
+      
+    });
+    
+    app.post('/itemRequest', async (req, res) => {
+      const request = req.body;
+      const result = await requestCollection.insertOne(request);
+      res.send(result);
+    });
+
+
+    // my asset page api
+    app.get('/assetItems', async (req, res) => {
+      const searchName = req.query.search || '';
+      const type = req.query.type || 'all';
+      let query = {};
+      if (searchName) {
+          query.asset_name = { $regex: searchName, $options: 'i' };
       }
-    });
-    
-    app.post('/requests', async (req, res) => {
-        const requestData = req.body;
-        const requestCollection = client.db("assetManagement").collection("requests");
-        const result = await requestCollection.insertOne(requestData);
-       res.send(result)
-    });
-    
+      if (type !== 'all') {
+          query.asset_type = type;
+      }
+          const assetItems = await assetItemCollection.find(query).toArray();
+          res.send(assetItems);
+  });
+  
 
+  // my team api
+  app.get('/users', async (req, res) => {
+    const currentMonth = new Date().getMonth();
+    const upcomingEvents = await userCollection.find({
+        $expr: { $eq: [{ $month: '$dateOfBirth' }, currentMonth + 1] } 
+    }).toArray();
 
+    const today = new Date();
+    upcomingEvents.forEach(event => {
+        const eventDate = new Date(event.dateOfBirth.setFullYear(today.getFullYear()));
+        if (eventDate < today) {
+            eventDate.setFullYear(today.getFullYear() + 1);
+        }
+        const diffTime = Math.abs(eventDate - today);
+        const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        event.remainingDays = remainingDays;
+    });
+
+    res.send(upcomingEvents);
+});
 
 
 
