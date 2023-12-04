@@ -73,6 +73,27 @@ async function run() {
       }
     };
 
+    app.post('/assetItems', async (req, res) => {
+        const assetInfo = req.body;
+        const result = await assetItemCollection.insertOne(assetInfo);
+        res.send(result);
+    });
+
+    // request admin
+    app.get('/requests', async (req, res) => {
+      let query = {};
+        if (searchQuery) {
+          query = {
+            $or: [
+              { requesterName: { $regex: searchQuery, $options: 'i' } },
+              { requesterEmail: { $regex: searchQuery, $options: 'i' } }
+            ]
+          };
+        }
+        const requests = await requestCollection.find(query).toArray();
+        res.json(requests);
+    });
+
     // Route for update user to admin
     app.put("/users/admin/:email", async (req, res) => {
       const email = req.params.email;
@@ -111,7 +132,7 @@ async function run() {
 
     app.get("/assetItems", async (req, res) => {
       const assets = await assetItemCollection.find({}).toArray();
-      res.json(assets);
+      res.send(assets);
     });
 
     // employee related api
@@ -119,11 +140,7 @@ async function run() {
       
         const userData = req.body;
         const result = await userCollection.insertOne(userData);
-        if (result.insertedId) {
-          res.status(201).json({ message: "User created successfully" });
-        } else {
-          res.status(500).json({ message: "Failed to create user" });
-        }
+       res.send(result)
       
     });
 
@@ -147,10 +164,9 @@ async function run() {
       if (req.query.assetType) {
         query.asset_type = req.query.assetType;
       }
-      console.log(query);
-    const result = await assetItemCollection.find(query).toArray()
+     const result = await assetItemCollection.find(query).toArray()
        
-          res.json(result);
+          res.send(result);
         
     });
 
@@ -158,7 +174,7 @@ async function run() {
     
     app.get('/users', async (req, res) => {
       const user = await userCollection.findOne({ email: req.query.email });
-      res.json(user);
+      res.send(user);
     });
     
     app.post('/requests', async (req, res) => {
@@ -182,7 +198,7 @@ async function run() {
       
     });
     
-    app.post('/itemRequest', async (req, res) => {
+    app.post('/requests', async (req, res) => {
       const request = req.body;
       const result = await requestCollection.insertOne(request);
       res.send(result);
@@ -225,6 +241,10 @@ async function run() {
 
     res.send(upcomingEvents);
 });
+
+// employee home
+
+
 
 
 
