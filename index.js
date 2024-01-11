@@ -296,7 +296,7 @@ app.get('/adminreq',async(req,res)=>{
   res.send(result)
 })
 
-// end
+// end ..
 
 // asset api 
 app.get('/asset',async (req,res)=>{
